@@ -1,0 +1,58 @@
+{
+    "name": "hachchadi/cmi-payment",
+    "description": "A Laravel package for CMI payment integration",
+    "keywords": [
+        "hachchadi",
+        "laravel",
+        "cmi-payment"
+    ],
+    "homepage": "https://github.com/hachchadi/cmi-payment",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Hachchadi",
+            "email": "contact@hachchadi.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4",
+        "illuminate/support": "^9.52"
+    },
+    "require-dev": {
+        "pestphp/pest": "^1.23",
+        "orchestra/testbench": "^7.42"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hachchadi\\CmiPayment\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hachchadi\\CmiPayment\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Hachchadi\\CmiPayment\\CmiPaymentServiceProvider"
+            ],
+            "aliases": {
+                "Cmi": "Hachchadi\\CmiPayment\\Facades\\Cmi"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
