@@ -6,38 +6,38 @@ use Exception;
 
 class InvalidRequest extends Exception
 {
-    public static function amountNotSpecified()
+    public static function amountNotSpecified(): static
     {
-        return new static("The 'amount' is not specified.");
+        return new static('Aucun montant n\'a été renseigné. Veuillez renseigner un montant de la transaction.');
     }
 
-    public static function amountValueInvalid()
+    public static function amountValueInvalid(): static
     {
-        return new static("The 'amount' value is invalid. It must be a numeric value.");
+        return new static('Le montant de la transaction saisie est invalide. Veuillez renseigner une valeur numérique du montant sans symbole monétaire. Utilisez « . » ou « , » pour le séparateur du décimal.');
     }
 
-    public static function currencyNotSpecified()
+    public static function currencyNotSpecified(): static
     {
-        return new static("The 'currency' is not specified.");
+        return new static('Aucun code de devise n\'a été renseigné. Veuillez renseigner un code ISO de la devise de la transaction.');
     }
 
-    public static function currencyValueInvalid()
+    public static function currencyValueInvalid(): static
     {
-        return new static("The 'currency' value is invalid. It must be a 3-character string.");
+        return new static('Le code de devise renseigné est invalide. Veuillez renseigner un code numérique ISO 4217 de la devise. Code ISO du MAD : 504');
     }
 
-    public static function attributeNotSpecified($attribute)
+    public static function attributeNotSpecified(string $attribute): static
     {
-        return new static("The '{$attribute}' is not specified.");
+        return new static('Aucun(e) '.$attribute.' n\'a été renseigné(e). Veuillez le renseigner.');
     }
 
-    public static function attributeInvalidString($attribute)
+    public static function attributeInvalidString(string $attribute): static
     {
-        return new static("The '{$attribute}' value is invalid. It must be a non-empty string.");
+        return new static('La valeur de '.$attribute.' renseignée n\'est pas valide. Veuillez renseigner un(e) '.$attribute.' qui ne contient aucun espace ou une chaîne de caractère vide.');
     }
 
-    public static function emailValueInvalid()
+    public static function emailValueInvalid(): static
     {
-        return new static("The 'email' value is invalid.");
+        return new static('L\'adresse email du client renseignée n\'est pas une adresse électronique valide.');
     }
 }
