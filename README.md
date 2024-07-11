@@ -111,3 +111,4 @@ class OrderController extends Controller
 #### Ensure your `.env` file is properly configured with your CMI credentials and URLs.
 #### Customize the CMI configuration in `config/cmi.php` as per your integration requirements.
 #### Handle exceptions and error responses appropriately in your application to provide a smooth payment experience for users.
+
