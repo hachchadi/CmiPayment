@@ -8,46 +8,46 @@ class InvalidConfiguration extends Exception
 {
     public static function storeKeyNotSpecified(): static
     {
-        return new static('Aucune clé de magasin (storeKey) n\'a été renseigné. Vous devez fournir une clé de magasin valide (configurée dans votre espace back office de la plate-forme CMI).');
+        return new static('No store key (storeKey) has been specified. You must provide a valid store key (configured in your back office of the CMI platform).');
     }
 
     public static function storeKeyInvalid(): static
     {
-        return new static('La clé de magasin (storeKey) renseignée n\'est pas valide. Veuillez renseigner une clé de magasin qui ne contient aucun espace ou une chaîne de caractère vide.');
+        return new static('The store key (storeKey) provided is not valid. Please provide a store key that does not contain any spaces or an empty string.');
     }
 
     public static function clientIdNotSpecified(): static
     {
-        return new static('Aucun identifiant du marchand (clientId) n\'a été renseigné. Vous devez fournir identifiant du marchand valide (attribué par le CMI)).');
+        return new static('No merchant ID (clientId) has been specified. You must provide a valid merchant ID (assigned by CMI).');
     }
 
     public static function clientIdInvalid(): static
     {
-        return new static('L\'identifiant du marchand (clientId) renseigné n\'est pas valide. Veuillez renseigner un identifiant du marchand qui ne contient aucun espace ou une chaîne de caractère vide.');
+        return new static('The merchant ID (clientId) provided is not valid. Please provide a merchant ID that does not contain any spaces or an empty string.');
     }
 
     public static function attributeNotSpecified(string $attribute): static
     {
-        return new static('Aucun(e) '.$attribute.' n\'a été renseigné(e). Veuillez le renseigner.');
+        return new static('No ' . $attribute . ' has been specified. Please provide it.');
     }
 
     public static function attributeInvalidString(string $attribute): static
     {
-        return new static('La valeur de '.$attribute.' renseignée n\'est pas valide. Veuillez renseigner un(e) '.$attribute.' qui ne contient aucun espace ou une chaîne de caractère vide.');
+        return new static('The value of ' . $attribute . ' provided is not valid. Please provide a ' . $attribute . ' that does not contain any spaces or an empty string.');
     }
 
     public static function attributeInvalidUrl(string $attribute): static
     {
-        return new static('L\'url '.$attribute.' renseigné n\'est pas valide. Veuillez renseigner un lien valide.');
+        return new static('The URL for ' . $attribute . ' provided is not valid. Please provide a valid link.');
     }
 
     public static function langValueInvalid(): static
     {
-        return new static('La valeur de la langue par défaut n\'est pas valide. Valeurs possibles : ar, fr, en');
+        return new static('The default language value is not valid. Possible values: ar, fr, en');
     }
 
     public static function sessionimeoutValueInvalid(): static
     {
-        return new static('La valeur de délai d\'expiration de la session (sessionTimeout) n\'est pas valide? Veuillez renseigner un nombre valide. La valeur minimale autorisée est 30 secondes et la valeur maximale est 2700 secondes.');
+        return new static('The session timeout (sessionTimeout) value is not valid. Please provide a valid number. The minimum allowed value is 30 seconds and the maximum is 2700 seconds.');
     }
 }

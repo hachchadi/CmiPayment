@@ -8,36 +8,36 @@ class InvalidRequest extends Exception
 {
     public static function amountNotSpecified(): static
     {
-        return new static('Aucun montant n\'a été renseigné. Veuillez renseigner un montant de la transaction.');
+        return new static('No amount has been specified. Please provide the transaction amount.');
     }
 
     public static function amountValueInvalid(): static
     {
-        return new static('Le montant de la transaction saisie est invalide. Veuillez renseigner une valeur numérique du montant sans symbole monétaire. Utilisez « . » ou « , » pour le séparateur du décimal.');
+        return new static('The entered transaction amount is invalid. Please provide a numeric value for the amount without any currency symbols. Use "." or "," for the decimal separator.');
     }
 
     public static function currencyNotSpecified(): static
     {
-        return new static('Aucun code de devise n\'a été renseigné. Veuillez renseigner un code ISO de la devise de la transaction.');
+        return new static('No currency code has been specified. Please provide an ISO code for the transaction currency.');
     }
 
     public static function currencyValueInvalid(): static
     {
-        return new static('Le code de devise renseigné est invalide. Veuillez renseigner un code numérique ISO 4217 de la devise. Code ISO du MAD : 504');
+        return new static('The provided currency code is invalid. Please provide an ISO 4217 numeric code for the currency. ISO code for MAD: 504');
     }
 
     public static function attributeNotSpecified(string $attribute): static
     {
-        return new static('Aucun(e) '.$attribute.' n\'a été renseigné(e). Veuillez le renseigner.');
+        return new static('No ' . $attribute . ' has been specified. Please provide it.');
     }
 
     public static function attributeInvalidString(string $attribute): static
     {
-        return new static('La valeur de '.$attribute.' renseignée n\'est pas valide. Veuillez renseigner un(e) '.$attribute.' qui ne contient aucun espace ou une chaîne de caractère vide.');
+        return new static('The value of ' . $attribute . ' provided is not valid. Please provide a ' . $attribute . ' that does not contain any spaces or an empty string.');
     }
 
     public static function emailValueInvalid(): static
     {
-        return new static('L\'adresse email du client renseignée n\'est pas une adresse électronique valide.');
+        return new static('The provided customer email address is not a valid email address.');
     }
 }
