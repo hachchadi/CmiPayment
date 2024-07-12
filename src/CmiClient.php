@@ -6,11 +6,12 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use Hachchadi\CmiPayment\Exceptions\InvalidConfiguration;
 use Hachchadi\CmiPayment\Exceptions\InvalidRequest;
+use Hachchadi\CmiPayment\Exceptions\InvalidResponseHash;
 
 class CmiClient
 {
+
     private string $baseUri;
-    private string $baseUriApi;
     private string $clientId;
     private string $storeKey;
     private string $storeType;
@@ -27,7 +28,18 @@ class CmiClient
     private bool $autoRedirect;
     private string $sessionTimeout;
     private string $rnd;
+    private string $amount;
+    private string $oid;
+    private string $email;
+    private string $billToName;
+    private string $tel;
+    private bool $currenciesList;
+    private string $amountCur;
+    private string $symbolCur;
+    private string $description;
     private string $hash;
+
+    private string $baseUriApi;
     private array $apiCredentials;
 
     public function __construct()
@@ -57,34 +69,15 @@ class CmiClient
     public function processPayment(array $data)
     {
         // Validate and merge the necessary data
-        $data = array_merge($data, [
-            'clientid' => $this->clientId,
-            'storekey' => $this->storeKey,
-            'tranType' => $this->tranType,
-            'currency' => $this->currency,
-            'lang' => $this->lang,
-            'hashAlgorithm' => $this->hashAlgorithm,
-            'okurl' => $this->okUrl,
-            'failurl' => $this->failUrl,
-            'callbackurl' => $this->callbackUrl,
-            'rnd' => microtime(),
-            'autoRedirect' => $this->autoRedirect
-        ]);
+        $data = $this->getCmiData($data);
 
         // Generate the hash
-        $data['hash'] = $this->generateHash($data);
+        $data['HASH'] = $this->generateHash($data);
 
         $this->guardAgainstInvalidRequest($data); // Validate input data before processing
 
-        // URL for the CMI payment gateway
-        $url = $this->baseUri;
-
         // Generate the HTML form
-        $html = $this->generateHtmlForm($url, $data);
-
-        // Output the HTML form and exit
-        echo $html;
-        exit();
+        $this->generateHtmlForm($data);
     }
 
     public function getCmiStatus(string $orderId): string
@@ -125,7 +118,7 @@ class CmiClient
         return $status;
     }
 
-    protected function generateHtmlForm(string $url, array $data): string
+    protected function generateHtmlForm(array $data): string
     {
         $html = "<html>";
         $html .= "<head>";
@@ -135,7 +128,7 @@ class CmiClient
         $html .= "<meta http-equiv='Expires' content='now'>";
         $html .= "</head>";
         $html .= "<body onload='document.forms[\"redirectpost\"].submit();'>";
-        $html .= "<form name='redirectpost' method='post' action='{$url}'>";
+        $html .= "<form name='redirectpost' method='post' action='{$this->baseUri}'>";
 
         foreach ($data as $key => $value) {
             $html .= "<input type='hidden' name='{$key}' value='" . trim($value) . "'>";
@@ -145,16 +138,17 @@ class CmiClient
         $html .= "</body>";
         $html .= "</html>";
 
-        return $html;
+        // Output the HTML form and exit
+        echo $html;
+        exit();
     }
 
-    public function generateHash($data): string
+    public function generateHash(array $data): string
     {
+        $this->unsetData($data);
+
         // Assign store key
         $storeKey = $this->storeKey;
-
-        // Exclude 'storekey' from requireOpts
-        unset($this->storeKey);
 
         // Retrieve and sort parameters
         $cmiParams = $data;
@@ -186,9 +180,45 @@ class CmiClient
         return $hash;
     }
 
+    public function validateHash(array $data): bool
+    {
+        $this->unsetData($data);
+
+        $storeKey = $this->storeKey;
+        $hashval = '';
+        foreach ($data as $key => $value) {
+            if ($key !== 'HASH' && $key !== 'encoding') {
+                $escapedValue = str_replace("|", "\\|", str_replace("\\", "\\\\", $value));
+                $hashval .= $escapedValue . "|";
+            }
+        }
+        $escapedStoreKey = str_replace("|", "\\|", str_replace("\\", "\\\\", $storeKey));
+        $hashval .= $escapedStoreKey;
+        $calculatedHash = base64_encode(pack('H*', hash('sha512', $hashval)));
+
+        if ($calculatedHash !== $data['HASH']) {
+            throw InvalidResponseHash::hashMismatch();
+        }
+
+        return true;
+    }
+
+    public function getCmiData(array $params = []): array
+    {
+        $cmiParams = array_merge(get_object_vars($this), $params);
+        $this->unsetData($cmiParams);
+
+        return $cmiParams;
+    }
+
+    private function unsetData(&$data): void
+    {
+        unset($data['storeKey'], $data['baseUri'],$data['baseUriApi'],$data['apiCredentials']);
+    }
+
     private function guardAgainstInvalidConfiguration()
     {
-        //clientId
+        // clientId
         if (! $this->clientId) {
             throw InvalidConfiguration::clientIdNotSpecified();
         }
@@ -197,7 +227,7 @@ class CmiClient
             throw InvalidConfiguration::clientIdInvalid();
         }
 
-        //storeKey
+        // storeKey
         if (! $this->storeKey) {
             throw InvalidConfiguration::storeKeyNotSpecified();
         }
@@ -206,43 +236,43 @@ class CmiClient
             throw InvalidConfiguration::storeKeyInvalid();
         }
 
-        //storeType
+        // storeType
         if (! $this->storeType) {
-            throw InvalidConfiguration::attributeNotSpecified('modèle du paiement du marchand (storeType)');
+            throw InvalidConfiguration::attributeNotSpecified('merchant payment model (storeType)');
         }
 
         if (preg_match('/\s/', $this->storeType)) {
-            throw InvalidConfiguration::attributeInvalidString('modèle du paiement du marchand (storeType)');
+            throw InvalidConfiguration::attributeInvalidString('merchant payment model (storeType)');
         }
 
-        //tranType
+        // tranType
         if (! $this->tranType) {
-            throw InvalidConfiguration::attributeNotSpecified('Type de la transaction (tranType)');
+            throw InvalidConfiguration::attributeNotSpecified('transaction type (tranType)');
         }
 
         if (preg_match('/\s/', $this->tranType)) {
-            throw InvalidConfiguration::attributeInvalidString('Type de la transaction (tranType)');
+            throw InvalidConfiguration::attributeInvalidString('transaction type (tranType)');
         }
 
-        //lang
+        // lang
         if (! in_array($this->lang, ['fr', 'ar', 'en'])) {
             throw InvalidConfiguration::langValueInvalid();
         }
 
-        //baseUri
+        // baseUri
         if (! $this->baseUri) {
-            throw InvalidConfiguration::attributeNotSpecified('gateway de paiement (baseUri)');
+            throw InvalidConfiguration::attributeNotSpecified('payment gateway (baseUri)');
         }
 
         if (preg_match('/\s/', $this->baseUri)) {
-            throw InvalidConfiguration::attributeInvalidString('gateway de paiement (baseUri)');
+            throw InvalidConfiguration::attributeInvalidString('payment gateway (baseUri)');
         }
 
         if (! preg_match("/\b(?:(?:https):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i", $this->baseUri)) {
-            throw InvalidConfiguration::attributeInvalidUrl('gateway de paiement (baseUri)');
+            throw InvalidConfiguration::attributeInvalidUrl('payment gateway (baseUri)');
         }
 
-        //okUrl
+        // okUrl
         if (! $this->okUrl) {
             throw InvalidConfiguration::attributeNotSpecified('okUrl');
         }
@@ -255,7 +285,7 @@ class CmiClient
             throw InvalidConfiguration::attributeInvalidUrl('okUrl');
         }
 
-        //failUrl
+        // failUrl
         if (! $this->failUrl) {
             throw InvalidConfiguration::attributeNotSpecified('failUrl');
         }
@@ -268,7 +298,7 @@ class CmiClient
             throw InvalidConfiguration::attributeInvalidUrl('failUrl');
         }
 
-        //shopUrl
+        // shopUrl
         if (! $this->shopUrl) {
             throw InvalidConfiguration::attributeNotSpecified('shopUrl');
         }
@@ -281,7 +311,7 @@ class CmiClient
             throw InvalidConfiguration::attributeInvalidUrl('shopUrl');
         }
 
-        //callbackUrl
+        // callbackUrl
         if (! $this->callbackUrl) {
             throw InvalidConfiguration::attributeNotSpecified('callbackUrl');
         }
@@ -294,27 +324,27 @@ class CmiClient
             throw InvalidConfiguration::attributeInvalidUrl('callbackUrl');
         }
 
-        //hashAlgorithm
+        // hashAlgorithm
         if (! $this->hashAlgorithm) {
-            throw InvalidConfiguration::attributeNotSpecified('version du hachage (hashAlgorithm)');
+            throw InvalidConfiguration::attributeNotSpecified('hash version (hashAlgorithm)');
         }
 
         if (preg_match('/\s/', $this->hashAlgorithm)) {
-            throw InvalidConfiguration::attributeInvalidString('version du hachage (hashAlgorithm)');
+            throw InvalidConfiguration::attributeInvalidString('hash version (hashAlgorithm)');
         }
 
-        //encoding
+        // encoding
         if (! $this->encoding) {
-            throw InvalidConfiguration::attributeNotSpecified('encodage des données (encoding)');
+            throw InvalidConfiguration::attributeNotSpecified('data encoding (encoding)');
         }
 
         if (preg_match('/\s/', $this->encoding)) {
-            throw InvalidConfiguration::attributeInvalidString('encodage des données (encoding)');
+            throw InvalidConfiguration::attributeInvalidString('data encoding (encoding)');
         }
 
-        //sessionTimeout
+        // sessionTimeout
         if (! $this->sessionTimeout) {
-            throw InvalidConfiguration::attributeNotSpecified('délai d\'expiration de la session (sessionTimeout)');
+            throw InvalidConfiguration::attributeNotSpecified('session timeout (sessionTimeout)');
         }
 
         if ((int) $this->sessionTimeout < 30 || (int) $this->sessionTimeout > 2700) {
@@ -324,7 +354,7 @@ class CmiClient
 
     public function guardAgainstInvalidRequest($data)
     {
-        //amount
+        // amount
         if ($data['amount'] === null) {
             throw InvalidRequest::amountNotSpecified();
         }
@@ -333,7 +363,7 @@ class CmiClient
             throw InvalidRequest::amountValueInvalid();
         }
 
-        //currency
+        // currency
         if ($data['currency'] === null) {
             throw InvalidRequest::currencyNotSpecified();
         }
@@ -342,49 +372,49 @@ class CmiClient
             throw InvalidRequest::currencyValueInvalid();
         }
 
-        //orderid
-        if ($data['orderid'] === null) {
-            throw InvalidRequest::attributeNotSpecified('identifiant de la commande (orderid)');
+        // oid
+        if ($data['oid'] === null) {
+            throw InvalidRequest::attributeNotSpecified('order ID (oid)');
         }
 
-        if (! is_string($data['orderid']) || preg_match('/\s/', $data['orderid'])) {
-            throw InvalidRequest::attributeInvalidString('identifiant de la commande (orderid)');
+        if (! is_string($data['oid']) || preg_match('/\s/', $data['oid'])) {
+            throw InvalidRequest::attributeInvalidString('order ID (oid)');
         }
 
-        //email
+        // email
         if ($data['email'] === null) {
-            throw InvalidRequest::attributeNotSpecified('adresse électronique du client (email)');
+            throw InvalidRequest::attributeNotSpecified('customer email (email)');
         }
 
         if (! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             throw InvalidRequest::emailValueInvalid();
         }
 
-        //billToName
+        // billToName
         if ($data['billToName'] === null) {
-            throw InvalidRequest::attributeNotSpecified('nom du client (billToName)');
+            throw InvalidRequest::attributeNotSpecified('customer name (billToName)');
         }
 
         if (! is_string($data['billToName']) || $data['billToName'] === '') {
-            throw InvalidRequest::attributeInvalidString('nom du client (billToName)');
+            throw InvalidRequest::attributeInvalidString('customer name (billToName)');
         }
 
-        //tel
+        // tel
         if (isset($data['tel']) && ! is_string($data['tel'])) {
-            throw InvalidRequest::attributeInvalidString('téléphone du client (tel)');
+            throw InvalidRequest::attributeInvalidString('customer phone (tel)');
         }
 
-        //amountCur
+        // amountCur
         if (isset($data['amountCur']) && ! is_string($data['amountCur'])) {
-            throw InvalidRequest::attributeInvalidString('montant de coversion (amountCur)');
+            throw InvalidRequest::attributeInvalidString('conversion amount (amountCur)');
         }
 
-        //symbolCur
+        // symbolCur
         if (isset($data['symbolCur']) && ! is_string($data['symbolCur'])) {
-            throw InvalidRequest::attributeInvalidString('symbole de la devise de conversion (symbolCur)');
+            throw InvalidRequest::attributeInvalidString('conversion currency symbol (symbolCur)');
         }
 
-        //description
+        // description
         if (isset($data['description']) && ! is_string($data['description'])) {
             throw InvalidRequest::attributeInvalidString('description');
         }

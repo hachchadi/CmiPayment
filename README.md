@@ -33,10 +33,10 @@ CMI_CALLBACK_URL=https://your-app.com/payment/callback
 CMI_SHOP_URL=(https://your-app.com)
 ```
 
-Configuration API Check Status Order
+For checking order status via the CMI API, add the following to your .env:
 
 ```bash
-CMI_BASE_URI_API='https://testpayment.cmi.co.ma/fim/api'
+CMI_BASE_URI_API=https://testpayment.cmi.co.ma/fim/api
 CMI_API_CREDENTIALS_NAME=your_cmi_name
 CMI_API_CREDENTIALS_PASSWORD=your_cmi_password
 CMI_API_CREDENTIALS_CLIENT_ID=your_cmi_client_id
@@ -64,7 +64,7 @@ class PaymentController extends Controller
             $data = [
                 'amount' => $request->input('amount'),
                 'currency' => $request->input('currency'),
-                'orderid' => $request->input('orderid'),
+                'oid' => $request->input('orderid'),
                 'email' => $request->input('email'),
                 'billToName' => $request->input('billToName'),
                 // Add other required fields as needed
@@ -103,6 +103,39 @@ class OrderController extends Controller
             // Handle any exceptions
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+}
+```
+
+### 3. Validating the Response Hash
+
+```bash
+use Hachchadi\CmiPayment\CmiClient;
+use Hachchadi\CmiPayment\Exceptions\InvalidResponseHash;
+
+public function handleCallback(Request $request)
+{
+    try {
+        $responseData = $request->all();
+
+        if ($responseData) {
+            
+            // Validate the hash
+            $isValid = $this->cmiClient->validateHash($responseData);
+            
+            if ($isValid && $_POST['ProcReturnCode'] == '00') {
+                $response = 'ACTION=POSTAUTH';
+            } else {
+                $response = 'FAILURE';
+            }
+        } else {
+            $response = 'No Data POST';
+        }
+
+        return $response;
+
+    } catch (InvalidResponseHash $e) {
+        Log::error($e->getMessage());
     }
 }
 ```
